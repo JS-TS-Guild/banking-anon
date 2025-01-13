@@ -106,7 +106,7 @@ export default class GlobalRegistry {
 
     }
 
-    console.log("selected bank accounts", bankAccountsForUserOne, bankAccountsForUserTwo)
+    console.log("selected bank accounts", bankAccountsForUserOne, bankAccountsForUserTwo, isNegativeAllowed, userOne, userTwo, amount, transferFromBankId, transferToBankId)
     if (!bankAccountsForUserOne.length || !bankAccountsForUserTwo.length) {
       throw new Error('Bank accounts not found for one or both users')
     }
