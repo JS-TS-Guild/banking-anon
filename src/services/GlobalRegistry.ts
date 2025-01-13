@@ -87,7 +87,7 @@ export default class GlobalRegistry {
     return null
   }
 
-  static transfer(isNegativeAllowed: boolean, userOne: UserId, userTwo: UserId, amount: number, transferFromBankId: BankId, transferToBankId?: BankId) {
+ static transfer(isNegativeAllowed: boolean, userOne: UserId, userTwo: UserId, amount: number, transferFromBankId: BankId, transferToBankId?: BankId) {
     let bankAccountsForUserOne: BankAccount[] = []
     let bankAccountsForUserTwo: BankAccount[] = []
 
@@ -97,25 +97,51 @@ export default class GlobalRegistry {
         bankAccountsForUserOne.push(account)
       } else if (account.userId === userTwo) {
         if (transferToBankId) {
-            if (account.getBankId() === transferToBankId) bankAccountsForUserTwo.push(account)
-            else continue
-        } else if (account.getBankId() === transferFromBankId) {
+          if (account.getBankId() === transferToBankId) {
             bankAccountsForUserTwo.push(account)
+          }
+        } else if (account.getBankId() === transferFromBankId) {
+          bankAccountsForUserTwo.push(account)
         }
       }
-
     }
 
     console.log("selected bank accounts", bankAccountsForUserOne, bankAccountsForUserTwo, isNegativeAllowed, userOne, userTwo, amount, transferFromBankId, transferToBankId)
     if (!bankAccountsForUserOne.length || !bankAccountsForUserTwo.length) {
       throw new Error('Bank accounts not found for one or both users')
     }
-    if (!isNegativeAllowed ) {
-        bankAccountsForUserOne = bankAccountsForUserOne.filter(bankAccount => bankAccount.getBalance() >= amount )
-        if (!bankAccountsForUserOne.length) throw new Error("Insufficient funds")
+
+    if (!isNegativeAllowed) {
+      let remainingAmount = amount
+      let totalAvailableBalance = 0
+
+      for (let i = 0; i < bankAccountsForUserOne.length; i++) {
+        totalAvailableBalance += bankAccountsForUserOne[i].getBalance()
+      }
+
+      if (totalAvailableBalance < amount) {
+        throw new Error("Insufficient funds")
+      }
+
+      // Deduct from each account until the full amount is covered
+      for (let i = 0; i < bankAccountsForUserOne.length && remainingAmount > 0; i++) {
+        const currentAccount = bankAccountsForUserOne[i]
+        const currentBalance = currentAccount.getBalance()
+        
+        if (currentBalance > 0) {
+          const amountToDeduct = Math.min(remainingAmount, currentBalance)
+          currentAccount.updateBalance(-amountToDeduct)
+          remainingAmount -= amountToDeduct
+        }
+      }
+
+      // Add the full amount to receiver's account
+      bankAccountsForUserTwo[0].updateBalance(amount)
+    } else {
+      // If negative balance is allowed, transfer from the first account
+      bankAccountsForUserOne[0].updateBalance(-amount)
+      bankAccountsForUserTwo[0].updateBalance(amount)
     }
-    bankAccountsForUserOne[0].updateBalance(-amount)
-    bankAccountsForUserTwo[0].updateBalance(amount)
   }
 
   static getUser(userId: UserId) {
