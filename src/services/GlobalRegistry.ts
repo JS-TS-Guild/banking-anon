@@ -96,16 +96,22 @@ export default class GlobalRegistry {
       if (account.userId === userOne && account.getBankId() === transferFromBankId) {
         bankAccountsForUserOne.push(account)
       } else if (account.userId === userTwo) {
-        bankAccountsForUserTwo.push(account)
+        if (transferToBankId) {
+            if (account.getBankId() === transferToBankId) bankAccountsForUserTwo.push(account)
+            else continue
+        } else if (account.getBankId() === transferFromBankId) {
+            bankAccountsForUserTwo.push(account)
+        }
       }
 
     }
 
+    console.log("selected bank accounts", bankAccountsForUserOne, bankAccountsForUserTwo)
     if (!bankAccountsForUserOne.length || !bankAccountsForUserTwo.length) {
       throw new Error('Bank accounts not found for one or both users')
     }
     if (!isNegativeAllowed ) {
-        bankAccountsForUserOne  = bankAccountsForUserOne.filter(bankAccount => bankAccount.getBalance() >= amount )
+        bankAccountsForUserOne = bankAccountsForUserOne.filter(bankAccount => bankAccount.getBalance() >= amount )
         if (!bankAccountsForUserOne.length) throw new Error("Insufficient funds")
     }
     bankAccountsForUserOne[0].updateBalance(-amount)
